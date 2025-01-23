@@ -10,9 +10,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Initialize Flask app with correct template path
-template_dir = os.path.abspath(os.path.dirname(__file__))
-app = Flask(__name__, 
-            template_folder=template_dir)
+# template_dir = os.path.abspath(os.path.dirname(__file__))
+app = Flask(__name__)
 
 # Initialize Supabase client
 SUPABASE_URL = os.getenv('SUPABASE_URL')
@@ -54,7 +53,7 @@ def save_to_supabase(movie):
 
 @app.route('/')
 def home():
-    return render_template('home.html')
+    return render_template('templates.html')
 
 @app.route('/search/<query>')
 def search_and_save(query):
@@ -90,7 +89,7 @@ def search_and_save(query):
 
 @app.route('/movies')
 def movies_page():
-    return render_template('movies.html')
+    return render_template('templates.html')
 
 @app.route('/movies/data')
 def get_movies():
@@ -107,7 +106,7 @@ def get_movies():
 
 @app.route('/stats')
 def stats_page():
-    return render_template('stats.html')
+    return render_template('templates.html')
 
 @app.route('/stats/data')
 def get_stats():
