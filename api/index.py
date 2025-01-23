@@ -4,13 +4,15 @@ from supabase import create_client
 from datetime import datetime
 import requests
 from urllib.parse import quote
-import time
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
 
-app = Flask(__name__)
+# Initialize Flask app with correct template path
+template_dir = os.path.abspath(os.path.dirname(__file__))
+app = Flask(__name__, 
+            template_folder=template_dir)
 
 # Initialize Supabase client
 SUPABASE_URL = os.getenv('SUPABASE_URL')
