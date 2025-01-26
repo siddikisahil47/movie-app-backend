@@ -1,5 +1,10 @@
 Flask
-requests
 supabase
 python-dotenv
 gunicorn
+Flask-Limiter
+pytest
+python-jose
+passlib
+bcrypt
+Flask-CORS

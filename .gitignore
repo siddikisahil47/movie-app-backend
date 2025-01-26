@@ -162,3 +162,5 @@ cython_debug/
 
 templates/
 vercel.json
+
+scripts/
