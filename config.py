@@ -5,10 +5,20 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Config:
-    """Base configuration."""
-    SECRET_KEY = os.getenv('SECRET_KEY', 'your-secret-key')
-    SUPABASE_URL = os.getenv('SUPABASE_URL')
-    SUPABASE_KEY = os.getenv('SUPABASE_KEY')
+    """Application configuration class."""
+    
+    # MongoDB Configuration
+    MONGODB_URI = os.getenv('MONGODB_URI')
+    if MONGODB_URI and 'mongodb+srv://' in MONGODB_URI:
+        MONGODB_URI += '?tls=true'
+    
+    # Flask Configuration
+    SECRET_KEY = os.getenv('SECRET_KEY', 'your-secret-key-here')
+    DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
+    
+    # API Configuration
+    API_TITLE = 'Movie App API'
+    API_VERSION = 'v1'
     
     # Flask settings
     FLASK_ENV = os.getenv('FLASK_ENV', 'development')

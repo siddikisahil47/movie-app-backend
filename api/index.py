@@ -100,11 +100,8 @@ def search_and_save(query):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# @app.route('/movies')
-# def movies_page():
-#     return render_template('movies.html')
 
-@app.route('/movies/data')
+@app.route('/movies')
 def get_movies():
     """Get all saved movies"""
     try:
@@ -117,9 +114,6 @@ def get_movies():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# @app.route('/stats')
-# def stats_page():
-#     return render_template('stats.html')
 
 @app.route('/stats/data')
 def get_stats():

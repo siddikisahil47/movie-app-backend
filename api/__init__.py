@@ -14,7 +14,14 @@ def create_app():
     
     # Register blueprints
     from api.routes.movies import movies
-    app.register_blueprint(movies)
+    from api.routes.streaming import streaming
+    from api.routes.genres import genres
+    from api.routes.movie_details import movie_details
+    
+    app.register_blueprint(movies, url_prefix='/api/v1')
+    app.register_blueprint(streaming, url_prefix='/api/v1')
+    app.register_blueprint(genres, url_prefix='/api/v1')
+    app.register_blueprint(movie_details, url_prefix='/api/v1')
     
     @app.route('/health')
     def health_check():

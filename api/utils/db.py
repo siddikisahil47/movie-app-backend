@@ -1,25 +1,29 @@
-from supabase import create_client
+from pymongo import MongoClient
 from functools import lru_cache
 from config import Config
+import ssl
 
 @lru_cache()
-def get_supabase_client():
+def get_mongodb_client():
     """
-    Create and return a cached Supabase client instance.
+    Create and return a cached MongoDB client instance.
     Uses LRU cache to prevent creating multiple instances.
     """
     try:
-        client = create_client(
-            supabase_url=Config.SUPABASE_URL,
-            supabase_key=Config.SUPABASE_KEY
+        client = MongoClient(
+            Config.MONGODB_URI,
+            tls=True,
+            tlsAllowInvalidCertificates=True
         )
         return client
     except Exception as e:
-        raise ConnectionError(f"Failed to connect to Supabase: {str(e)}")
+        raise ConnectionError(f"Failed to connect to MongoDB: {str(e)}")
 
 def get_db():
     """
     Get database connection.
-    Returns the Supabase client for database operations.
+    Returns the MongoDB database instance for operations.
     """
-    return get_supabase_client()
+    client = get_mongodb_client()
+    db = client['movies_database']
+    return db

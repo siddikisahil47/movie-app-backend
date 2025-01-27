@@ -1,5 +1,5 @@
-Flask
-supabase
+Flask[async]
+pymongo[srv]
 python-dotenv
 gunicorn
 Flask-Limiter
