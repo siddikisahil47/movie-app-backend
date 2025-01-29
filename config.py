@@ -4,11 +4,18 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
+def get_config():
+    return {
+        'MONGODB_URI': os.getenv('MONGODB_URI'),
+        'DB_NAME': os.getenv('DB_NAME', 'movies_database')
+    }
+
 class Config:
     """Application configuration class."""
     
     # MongoDB Configuration
-    MONGODB_URI = os.getenv('MONGODB_URI')
+    MONGODB_URI = os.getenv('MONGODB_URI', 'mongodb://localhost:27017')
+    DATABASE_NAME = os.getenv('DATABASE_NAME', 'movies_database')
     if MONGODB_URI and 'mongodb+srv://' in MONGODB_URI:
         MONGODB_URI += '?tls=true'
     
