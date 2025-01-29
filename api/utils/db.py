@@ -22,14 +22,12 @@ def get_db():
         mongodb_uri = os.getenv('MONGODB_URI')
         logger.info(f"Attempting to connect to MongoDB...")
         
-        # Use certifi for SSL certificate verification and allow invalid certificates for debugging
+        # Use certifi for SSL certificate verification
         client = MongoClient(
             mongodb_uri,
             tlsCAFile=certifi.where(),
-            tlsAllowInvalidCertificates=True,  # Added for debugging
-            tlsAllowInvalidHostnames=True,     # Added for debugging
-            serverSelectionTimeoutMS=10000,    # Increased timeout
-            connectTimeoutMS=20000,            # Increased timeout
+            serverSelectionTimeoutMS=5000,  # 5 second timeout
+            connectTimeoutMS=10000,
             retryWrites=True,
             w='majority'
         )
