@@ -188,3 +188,95 @@ def search_movies():
         return jsonify(movies_list), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@movies.route('/movies/latest', methods=['GET'])
+def get_latest_movies():
+    """Get latest movies with optional limit parameter"""
+    try:
+        # Get limit from query params, default to 10 if not provided
+        limit = request.args.get('limit', default=10, type=int)
+        
+        # Validate limit
+        if limit < 1:
+            return jsonify({'error': 'Limit must be greater than 0'}), 400
+        if limit > 50:
+            return jsonify({'error': 'Limit cannot exceed 50'}), 400
+
+        db = get_db()
+        # Find movies, sort by created_at in descending order, and limit results
+        movies_list = list(db.movies.find().sort('created_at', -1).limit(limit))
+        
+        # Convert ObjectId and dates to string for JSON serialization
+        for movie in movies_list:
+            movie['_id'] = str(movie['_id'])
+            movie['created_at'] = movie['created_at'].isoformat() if movie.get('created_at') else None
+            if movie.get('streaming_platforms'):
+                for platform in movie['streaming_platforms']:
+                    if platform.get('platform_id'):
+                        platform['platform_id'] = str(platform['platform_id'])
+                    if platform.get('available_until'):
+                        platform['available_until'] = platform['available_until'].isoformat()
+                    if platform.get('added_date'):
+                        platform['added_date'] = platform['added_date'].isoformat()
+
+        
+        return jsonify({
+            'movies': movies_list,
+            'total': len(movies_list),
+            'limit': limit
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@movies.route('/movies/featured', methods=['GET'])
+def get_featured_movies():
+    """Get featured movies with optional limit parameter"""
+    try:
+        # Get limit from query params, default to 5 if not provided
+        limit = request.args.get('limit', default=5, type=int)
+        
+        # Validate limit
+        if limit < 1:
+            return jsonify({'error': 'Limit must be greater than 0'}), 400
+        if limit > 20:  # Fixed the condition that was incorrectly checking > 0
+            return jsonify({'error': 'Limit cannot exceed 20'}), 400
+
+        db = get_db()
+        featured_movies = list(db.movie_details.find(
+            {'is_featured': True},
+            {
+                '_id': 1,
+                'movie_id': 1,
+                'title': 1,
+                'description': 1,
+                'year': 1,
+                'rating': 1,
+                'runtime': 1,
+                'director': 1,
+                'cast_members': 1,
+                'genres': 1,
+                'is_featured': 1,
+                'created_at': 1,
+                'quality': 1,  # Added quality field
+                'trailerUrl': 1  # Added trailerUrl field
+            }
+        ).sort('created_at', -1).limit(limit))  # Sort by newest first and limit results
+
+        # Transform the data for response
+        for movie in featured_movies:
+            movie['_id'] = str(movie['_id'])
+            # Transform genre IDs to strings
+            for genre in movie.get('genres', []):
+                if genre.get('id'):
+                    genre['id'] = str(genre['id'])
+            # Convert datetime to ISO string
+            if movie.get('created_at'):
+                movie['created_at'] = movie['created_at'].isoformat()
+
+        return jsonify({
+            'movies': featured_movies,
+            'total': len(featured_movies),
+            'limit': limit
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

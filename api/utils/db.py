@@ -1,7 +1,11 @@
 from pymongo import MongoClient
 from functools import lru_cache
-from config import Config
-import ssl
+# from config import Config
+from ssl import CERT_NONE
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 @lru_cache()
 def get_mongodb_client():
@@ -11,9 +15,11 @@ def get_mongodb_client():
     """
     try:
         client = MongoClient(
-            Config.MONGODB_URI,
-            tls=True,
-            tlsAllowInvalidCertificates=True
+            os.getenv("MONGODB_URI"),
+            ssl=True,
+            tlsAllowInvalidCertificates=True,
+            serverSelectionTimeoutMS=5000,
+            connectTimeoutMS=10000
         )
         return client
     except Exception as e:

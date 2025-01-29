@@ -255,32 +255,40 @@ def get_movies_by_genre_name(genre_name):
 
 @genres.route('/genres/with-movies', methods=['GET'])
 def get_genres_with_movies():
-    """Get all genres with their associated movies in a single request"""
     try:
         db = get_db()
-        limit = int(request.args.get('limit', 10))  # Default to 10 movies per genre
-        page = int(request.args.get('page', 1))
-        per_page = int(request.args.get('per_page', 20))  # Number of genres per page
-        quality = request.args.get('quality', '720')  # Default image quality
-        
-        # Validate parameters
-        if limit < 1:
-            return jsonify({'error': 'Limit must be greater than 0'}), 400
-        if page < 1:
-            return jsonify({'error': 'Page must be greater than 0'}), 400
-        
-        # Calculate skip for pagination
-        skip = (page - 1) * per_page
+        limit = min(int(request.args.get('limit', 10)), 20)  # Cap at 20 movies per genre
+        page = max(int(request.args.get('page', 1)), 1)
+        per_page = min(int(request.args.get('per_page', 20)), 50)  # Cap at 50 genres per page
+        quality = request.args.get('quality', '720')
         
         # Get total genres count for pagination
         total_genres = db.genres.count_documents({})
         
-        # Get genres with pagination
-        genres = list(db.genres.find({}).skip(skip).limit(per_page))
+        # Get genres with pagination, sorted by movie count
+        pipeline = [
+            {
+                '$lookup': {
+                    'from': 'movie_details',
+                    'localField': '_id',
+                    'foreignField': 'genres.id',
+                    'as': 'movie_count'
+                }
+            },
+            {
+                '$addFields': {
+                    'movieCount': { '$size': '$movie_count' }
+                }
+            },
+            { '$sort': { 'movieCount': -1 } },
+            { '$skip': (page - 1) * per_page },
+            { '$limit': per_page }
+        ]
+        
+        genres = list(db.genres.aggregate(pipeline))
         
         result = []
         for genre in genres:
-            # Find top N movies for this genre
             movies = list(db.movie_details.find(
                 {'genres.id': genre['_id']},
                 {
@@ -295,26 +303,22 @@ def get_genres_with_movies():
                     'is_latest': 1,
                     'streaming_platforms': 1
                 }
-            ).sort('rating', -1).limit(limit))
+            ).sort([('rating', -1), ('year', -1)]).limit(limit))
             
-            # Convert ObjectIds to strings and add image URLs
-            genre['_id'] = str(genre['_id'])
+            # Process movies...
             for movie in movies:
                 movie['_id'] = str(movie['_id'])
                 movie['image_url'] = f"https://imgcdn.media/pv/{quality}/{movie['movie_id']}.jpg"
-                # Convert platform IDs if present
                 if 'streaming_platforms' in movie:
                     for platform in movie['streaming_platforms']:
                         if 'platform_id' in platform:
                             platform['platform_id'] = str(platform['platform_id'])
             
-            # Add movies to genre object
-            genre_with_movies = {
-                '_id': genre['_id'],
+            result.append({
+                '_id': str(genre['_id']),
                 'name': genre['name'],
                 'movies': movies
-            }
-            result.append(genre_with_movies)
+            })
         
         response = {
             'genres': result,
@@ -326,7 +330,6 @@ def get_genres_with_movies():
             }
         }
         
-        # Add Cache-Control header for 5 minutes
         return jsonify(response), 200, {
             'Cache-Control': 'public, max-age=300',
             'Vary': 'Accept-Encoding'
@@ -334,4 +337,56 @@ def get_genres_with_movies():
     except ValueError:
         return jsonify({'error': 'Invalid parameters'}), 400
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@genres.route('/movie-details/similar', methods=['GET'])
+def get_similar_movies():
+    """Get similar movies based on genres, excluding the current movie"""
+    try:
+        db = get_db()
+        genres = request.args.get('genres', '').split(',')
+        exclude_id = request.args.get('exclude')
+        limit = int(request.args.get('limit', 10))
+
+        if not genres or not exclude_id:
+            return jsonify({'error': 'Genres and exclude parameters are required'}), 400
+
+        movies = list(db.movie_details.find(
+            {
+                '$and': [
+                    {'movie_id': {'$ne': exclude_id}},
+                    {'genres.name': {'$in': genres}}
+                ]
+            },
+            {
+                'movie_id': 1,
+                'title': 1,
+                'description': 1,
+                'year': 1,
+                'rating': 1,
+                'runtime': 1,
+                'director': 1,
+                'cast_members': 1,
+                'genres': 1,
+                'is_featured': 1,
+                'created_at': 1
+            }
+        ).sort('rating', -1).limit(limit))
+
+        # Convert all ObjectId fields to strings
+        for movie in movies:
+            movie['_id'] = str(movie['_id'])
+            # Convert genre ObjectIds
+            if 'genres' in movie:
+                for genre in movie['genres']:
+                    if 'id' in genre:
+                        genre['id'] = str(genre['id'])
+
+        if not movies:
+            return jsonify([]), 200
+
+        return jsonify(movies), 200
+
+    except Exception as e:
+        print(f"Error in get_similar_movies: {str(e)}")
         return jsonify({'error': str(e)}), 500 

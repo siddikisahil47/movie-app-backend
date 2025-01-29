@@ -21,8 +21,8 @@ class Config:
     API_VERSION = 'v1'
     
     # Flask settings
-    FLASK_ENV = os.getenv('FLASK_ENV', 'development')
-    DEBUG = FLASK_ENV == 'development'
+    # FLASK_ENV = os.getenv('FLASK_ENV', 'development')
+    # DEBUG = FLASK_ENV == 'development'
     
     # API settings
     API_TITLE = 'Movie App API'
