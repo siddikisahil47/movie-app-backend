@@ -28,4 +28,8 @@ def create_app():
         """Health check endpoint."""
         return {'status': 'healthy'}, 200
     
+    @app.route('/')
+    def home():
+        return {'status': 'API is running'}
+    
     return app

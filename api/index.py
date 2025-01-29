@@ -1,3 +1,4 @@
+from flask import Flask
 from api import create_app
 from dotenv import load_dotenv
 
@@ -5,5 +6,6 @@ load_dotenv()
 
 app = create_app()
 
-# Vercel requires this variable name
-application = app 
+# For Vercel serverless deployment
+if __name__ == '__main__':
+    app.run() 
