@@ -1,6 +1,8 @@
 # Component configuration for the Flask Movie API service
 componentName: movie-api-backend
 version: 1.0.0
+types:
+  - api
 buildSpec:
   source:
     # Use Python as the base image
@@ -12,38 +14,15 @@ buildSpec:
     commands:
       - pip install --no-cache-dir -r requirements.txt
       
-  # Configure environment variables
-  env:
-    - name: MONGODB_URI
-      required: true
-      sensitive: true
-    - name: SECRET_KEY
-      required: true
-      sensitive: true
-    - name: DEBUG
-      value: "False"
-    - name: API_VERSION
-      value: "v1"
-    - name: FLASK_APP
-      value: "app.py"
-    - name: FLASK_ENV
-      value: "production"
-
 # Runtime configuration  
 deploy:
-  # Use Gunicorn as the production server
-  command: gunicorn --bind :8080 --workers 2 --threads 4 --timeout 0 --access-logfile - --error-logfile - app:app
-  
-  # Configure the container
+  restConfig:
+    basePath: /api/v1
   container:
-    # Port configuration
     ports:
       - name: http
         containerPort: 8080
         servicePort: 80
-        protocol: TCP
-    
-    # Resource limits
     resources:
       limits:
         cpu: "1.0"
@@ -51,25 +30,26 @@ deploy:
       requests:
         cpu: "0.5"
         memory: "256Mi"
-    
-    # Health check configuration  
-    probes:
-      liveness:
-        httpGet:
-          path: /health
-          port: http
-        initialDelaySeconds: 15
-        periodSeconds: 30
-        timeoutSeconds: 5
-        failureThreshold: 3
-      readiness:
-        httpGet:
-          path: /health
-          port: http
-        initialDelaySeconds: 15
-        periodSeconds: 30
-        timeoutSeconds: 5
-        failureThreshold: 3
+    env:
+      - name: MONGODB_URI
+        required: true
+        sensitive: true
+      - name: SECRET_KEY
+        required: true
+        sensitive: true
+      - name: DEBUG
+        value: "False"
+      - name: FLASK_APP
+        value: "app.py"
+      - name: FLASK_ENV
+        value: "production"
+    command:
+      - gunicorn
+      - --bind=:8080
+      - --workers=2
+      - --threads=4
+      - --timeout=0
+      - app:app
 
 # Configure API endpoints
 api:
@@ -124,3 +104,12 @@ scale:
       resource:
         name: cpu
         targetAverageUtilization: 80
+
+config:
+  env:
+    - name: MONGODB_URI
+      required: true
+      sensitive: true
+    - name: SECRET_KEY
+      required: true
+      sensitive: true
