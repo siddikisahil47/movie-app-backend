@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import os
 import logging
 import certifi
+import dns.resolver
 
 load_dotenv()
 
@@ -18,11 +19,17 @@ def get_db():
     Uses LRU cache to prevent creating multiple instances.
     """
     try:
+        mongodb_uri = os.getenv('MONGODB_URI')
+        logger.info(f"Attempting to connect to MongoDB...")
+        
         # Use certifi for SSL certificate verification
         client = MongoClient(
-            os.getenv('MONGODB_URI'),
+            mongodb_uri,
             tlsCAFile=certifi.where(),
-            serverSelectionTimeoutMS=5000  # 5 second timeout
+            serverSelectionTimeoutMS=5000,  # 5 second timeout
+            connectTimeoutMS=10000,
+            retryWrites=True,
+            w='majority'
         )
         
         # Test the connection
@@ -35,6 +42,8 @@ def get_db():
     
     except Exception as e:
         logger.error(f"Failed to connect to MongoDB: {str(e)}")
+        # Log more details about the connection attempt
+        logger.error(f"Connection URI (masked): {mongodb_uri.split('@')[0]}@{'@'.join(mongodb_uri.split('@')[1:])}")
         raise
 
 # Initialize database connection
